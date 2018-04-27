@@ -1,24 +1,31 @@
 package br.com.jaison.ThreadTask;
 
+import java.util.concurrent.TimeUnit;
+
 public class Tarefa implements Runnable {
 
-	private long millis;
+	private long segundos;
 	private int id;
 
-	public Tarefa(long millis, int id) {
+	/**
+	 *
+	 * @param segundos
+	 * @param id
+	 */
+	public Tarefa(long segundos, int id) {
 		super();
-		this.millis = millis;
+		this.segundos = segundos;
 		this.id = id;
 	}
 
 	public void run() {
 		System.out.println("Iniciou id: " + this.id + "  Thread: " + Thread.currentThread().getName());
 		try {
-			long count = this.millis / 6;
-			while (this.millis > 0) {
+			long count = this.segundos / 6;
+			while (this.segundos > 0) {
 				System.out.println("Processando Tarefa id: " + this.id + "  Thread: " + Thread.currentThread().getName());
-				Thread.sleep(count);
-				this.millis -= count;
+				TimeUnit.SECONDS.sleep(count);
+				this.segundos -= count;
 			}
 
 			System.out.println("Finalizou task " + Thread.currentThread().getName());

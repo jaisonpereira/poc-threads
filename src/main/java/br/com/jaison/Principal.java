@@ -63,8 +63,8 @@ public class Principal {
 		// pool com cached thread
 		// ExecutorService threadPool2 = Executors.newCachedThreadPool();
 
-		pool.execute(new Tarefa(20000, 1));
-		pool.execute(new Tarefa(40000, 2));
+		pool.execute(new Tarefa(30, 1));
+		pool.execute(new Tarefa(30, 2));
 
 		/**
 		 * necessario chamar shutdownow antes de terminated caso contrario , is
@@ -94,7 +94,7 @@ public class Principal {
 			/**
 			 * return false se ele matou alguem
 			 */
-			System.out.println(pool.awaitTermination(30000, TimeUnit.MILLISECONDS));
+			System.out.println(pool.awaitTermination(40, TimeUnit.SECONDS));
 			pool.shutdownNow();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
