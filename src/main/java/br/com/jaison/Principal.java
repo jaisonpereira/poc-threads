@@ -1,125 +1,104 @@
 package br.com.jaison;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Vector;
 
-import br.com.jaison.ThreadTask.Tarefa;
+import br.com.jaison.Threads.TarefaBuscaTextual;
 
 /**
- * @author Jaison Pereira 27 de abr de 2018
+ * @author jpereira
  *
- *         Trabalhando com java.util.Concurrent
+ *         THREADS - poc
  *
- *         Trabalhando com ExecutorService -Pool de threads
+ *         java.lang.Thread - start( ) - sleep(..)
  *
- *         -CachedThreadPool caso a thread nao seja utilizada por 60 segundos
- *         ele elimina ela do
+ *         java.lang.Runnable
  *
- *         -FixedThreadPool numero de threads fixo
+ *         - run( ), interrupeted();
  *
- *         volatile - acessa memoria principal ao inves de cache do Objeto
+ *         -java.lang.Object - wait() -notify()
  *
- *         AtomicBoolean encapsulamento de um booleano
+ *         synchronized
  *
+ *         ---- UTILIZAR JCONSOLE ------
+ * 
  *
  *
  */
 public class Principal {
-	/**
-	 * ignora cache e acessa memoria principal
-	 */
-	volatile boolean isRunning = false;
 
-	/**
-	 * as mesmas caracteristicas de um volatile booleano
-	 *
-	 * @param args
-	 */
-
-	private AtomicBoolean estaRodando = new AtomicBoolean(true);
-
-	public static void main(String[] args) {
-
-		Principal main = new Principal();
-		try {
-			main.testePoolThread();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+	public static void main(String[] args) throws InterruptedException {
+		System.out.println("thread: dentro de 1 segundo vai inicializar");
+		Thread.sleep(1000);
+		new Principal().iniciaBuscaArquivo();
 
 	}
 
-	private void testePoolThread() throws InterruptedException {
-		// Thread task1 = new Thread(new Tarefa(1000), "Tarefa1");
-		// Thread task2 = new Thread(new Tarefa(1000), "Tarefa2");
+	private void iniciaBuscaArquivo() {
+		String nome = "Jon";
 
-		ExecutorService pool = Executors.newFixedThreadPool(2);
-		// caso a thread nao seja utilizada por 60 segundos ele elimina ela do
-		// pool com cached thread
-		// ExecutorService threadPool2 = Executors.newCachedThreadPool();
-
-		pool.execute(new Tarefa(30, 1));
-		pool.execute(new Tarefa(30, 2));
+		// collecao sincronizada
+		List<String> lista = Collections.synchronizedList(new ArrayList<String>());
+		// vector ja é sincronizado
+		Vector<String> vectorStringList = new Vector<>();
 
 		/**
-		 * necessario chamar shutdownow antes de terminated caso contrario , is
-		 * terminated nunca vai retornar true
-		 *
+		 * E possivel pausar uma thread e com == so funciona em cima de um bloco
+		 * synchronized
+		 * 
+		 * this.wait();
+		 * 
+		 * e notificar todas a threads com
+		 * 
+		 * this.notifyAll();
+		 * 
+		 * setar thread como daemon(true) ou seja ela so é executada se tiver threads
+		 * aguardando thread.setDaemon(true)
 		 */
-		/**
-		 * Interrompe as threads necessario o run estar envolvido em um try -
-		 * catch
-		 *
-		 * pool.shutdownNow();
-		 *
-		 */
 
-		System.out.println("Agendou comando  shutdown para quando as tarefas terminarem");
-		pool.shutdown();
+		Thread tarefaAssinaturas1 = new Thread(new TarefaBuscaTextual("assinaturas1.txt", nome), "Thread ass 1");
+		Thread tarefaAssinaturas2 = new Thread(new TarefaBuscaTextual("assinaturas2.txt", nome), "T ass 2");
+		Thread tarefaAutores = new Thread(new TarefaBuscaTextual("autores.txt", nome), "T aut");
 
-		/**
-		 * Ele so ira fazer o shutdown quando nao tiver mas nenhuma tarefa
-		 * rodando
-		 */
-		// while (!pool.isTerminated()) {
-		// System.out.println("Aguardando threads terminarem");
-		// }
+		tarefaAssinaturas1.start();
+		tarefaAssinaturas2.start();
+		tarefaAutores.start();
 
-		try {
-			/**
-			 * return false se ele matou alguem
-			 */
-			System.out.println(pool.awaitTermination(40, TimeUnit.SECONDS));
-			pool.shutdownNow();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-
-		if (pool.isShutdown()) {
-			System.out.println("Pool Shutdown executor");
-		}
-		Thread.sleep(15000);
 	}
 
-	public void testTimeOut() {
-		ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
-		final Future handler = executor.submit(new Callable() {
-			public Object call() throws Exception {
-				System.out.println("executou call");
-				return null;
+	private void simulaProcessa() throws InterruptedException {
+		boolean finish = false;
+		List<Integer> listExecutados = new ArrayList<>();
+		synchronized (listExecutados) {
+
+			for (int i = 0; i < 1000; i++) {
+				System.out.println("test" + i);
+			}
+			this.notify();
+			finish = true;
+
+		}
+		// notifica termino da execucao , porem so funciona em cima de um bloco
+		// syncronized
+
+		/**
+		 * tem que previnir problemas em que a execucao acima tenta notificar algo que
+		 * nem esta esperando ainda
+		 */
+		synchronized (listExecutados) {
+			System.out.println("aguardando notificacao");
+			// se nao terminou ela espera
+			// optar pelo while caso alguma operacao concorrente passe por esse ponto , ex
+			// 3- n threads
+			while (!finish) {
+				this.wait();
 			}
 
-		});
-		executor.schedule(new Runnable() {
-			public void run() {
-				handler.cancel(Principal.this.isRunning);
-			}
-		}, 10000, TimeUnit.MILLISECONDS);
+			// so vai executar daqui pra ca se receber notificao
+			System.out.println("Executou");
+		}
 	}
 
 }
